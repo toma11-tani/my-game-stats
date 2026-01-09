@@ -56,3 +56,54 @@ export async function checkOutGame(gameId: string) {
     return { success: false, error: 'チェックアウトに失敗しました' }
   }
 }
+
+/**
+ * 観戦メモを更新
+ */
+export async function updateMemo(gameId: string, memo: string) {
+  try {
+    // まず既存のレコードを確認
+    const { data: existing } = await supabase
+      .from('user_attendance')
+      .select('id')
+      .eq('user_id', TEMP_USER_ID)
+      .eq('game_id', gameId)
+      .single()
+
+    if (existing) {
+      // 更新
+      const { error } = await supabase
+        .from('user_attendance')
+        .update({ memo })
+        .eq('user_id', TEMP_USER_ID)
+        .eq('game_id', gameId)
+
+      if (error) {
+        console.error('Error updating memo:', error)
+        return { success: false, error: error.message }
+      }
+    } else {
+      // 新規作成
+      const { error } = await supabase
+        .from('user_attendance')
+        .insert({
+          user_id: TEMP_USER_ID,
+          game_id: gameId,
+          memo,
+        })
+
+      if (error) {
+        console.error('Error creating memo:', error)
+        return { success: false, error: error.message }
+      }
+    }
+
+    revalidatePath(`/games/${gameId}`)
+    revalidatePath('/games')
+    revalidatePath('/profile')
+    return { success: true }
+  } catch (error) {
+    console.error('Error updating memo:', error)
+    return { success: false, error: 'メモの更新に失敗しました' }
+  }
+}

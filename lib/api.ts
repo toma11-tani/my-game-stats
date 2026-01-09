@@ -391,3 +391,121 @@ export async function getPlayerStatsForAttendedGames() {
   return Array.from(playerStatsMap.values())
     .sort((a, b) => b.avg - a.avg)
 }
+
+/**
+ * 試合詳細情報を取得
+ */
+export async function getGameDetail(gameId: string) {
+  const { data, error } = await supabase
+    .from('games')
+    .select(`
+      id,
+      date,
+      opponent_team_id,
+      stadium,
+      home_score,
+      away_score,
+      result_type,
+      teams:opponent_team_id (
+        id,
+        name,
+        color_primary
+      )
+    `)
+    .eq('id', gameId)
+    .single()
+
+  if (error) {
+    console.error('Error fetching game detail:', error)
+    return null
+  }
+
+  return data
+}
+
+/**
+ * 試合の打者成績を取得
+ */
+export async function getGameBatterStats(gameId: string) {
+  const { data, error } = await supabase
+    .from('game_player_stats')
+    .select(`
+      player_id,
+      at_bats,
+      hits,
+      homeruns,
+      rbi,
+      runs,
+      stolen_bases,
+      players (
+        id,
+        name,
+        position,
+        number
+      )
+    `)
+    .eq('game_id', gameId)
+    .order('players(number)', { ascending: true })
+
+  if (error) {
+    console.error('Error fetching batter stats:', error)
+    return []
+  }
+
+  return data || []
+}
+
+/**
+ * 試合の投手成績を取得
+ */
+export async function getGamePitcherStats(gameId: string) {
+  const { data, error } = await supabase
+    .from('game_pitcher_stats')
+    .select(`
+      player_id,
+      result,
+      innings_pitched,
+      pitches,
+      hits_allowed,
+      strikeouts,
+      walks,
+      earned_runs,
+      players (
+        id,
+        name,
+        position,
+        number
+      )
+    `)
+    .eq('game_id', gameId)
+
+  if (error) {
+    console.error('Error fetching pitcher stats:', error)
+    return []
+  }
+
+  return data || []
+}
+
+/**
+ * ユーザーの観戦メモを取得
+ */
+export async function getUserMemo(gameId: string) {
+  const { data, error } = await supabase
+    .from('user_attendance')
+    .select('id, memo')
+    .eq('user_id', TEMP_USER_ID)
+    .eq('game_id', gameId)
+    .single()
+
+  if (error) {
+    if (error.code === 'PGRST116') {
+      // データが見つからない場合
+      return null
+    }
+    console.error('Error fetching user memo:', error)
+    return null
+  }
+
+  return data
+}

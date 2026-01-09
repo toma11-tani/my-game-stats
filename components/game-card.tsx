@@ -1,9 +1,10 @@
 'use client'
 
 import { useOptimistic, useTransition } from 'react'
+import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Check } from 'lucide-react'
+import { Check, ChevronRight } from 'lucide-react'
 import { checkInGame, checkOutGame } from '@/app/actions'
 
 interface GameCardProps {
@@ -71,7 +72,7 @@ export function GameCard({ game }: GameCardProps) {
     <Card className={`${cardBg} ${borderColor} shadow-sm hover:shadow-md transition-shadow border-0`}>
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-4">
-          <div className="flex-1">
+          <Link href={`/games/${game.id}`} className="flex-1 min-w-0 group">
             {/* 日付 */}
             <div className="text-xs text-slate-500 mb-2">
               {new Date(game.date).toLocaleDateString('ja-JP', {
@@ -111,7 +112,13 @@ export function GameCard({ game }: GameCardProps) {
 
             {/* 球場 */}
             <div className="text-xs text-slate-500">{game.stadium}</div>
-          </div>
+
+            {/* View Details Indicator */}
+            <div className="flex items-center gap-1 text-xs text-slate-400 mt-2 group-hover:text-slate-600">
+              <span>詳細を見る</span>
+              <ChevronRight className="w-3 h-3" />
+            </div>
+          </Link>
 
           {/* チェックインボタン */}
           <div className="flex-shrink-0">
