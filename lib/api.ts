@@ -23,8 +23,7 @@ export async function getAttendedGames() {
         result_type,
         teams:opponent_team_id (
           id,
-          name,
-          color_primary
+          name
         )
       )
     `)
@@ -192,8 +191,7 @@ export async function getAllGamesWithAttendance() {
       result_type,
       teams:opponent_team_id (
         id,
-        name,
-        color_primary
+        name
       )
     `)
     .order('date', { ascending: false })
@@ -245,8 +243,7 @@ export async function getAttendanceHistory() {
         result_type,
         teams:opponent_team_id (
           id,
-          name,
-          color_primary
+          name
         )
       )
     `)
@@ -396,6 +393,12 @@ export async function getPlayerStatsForAttendedGames() {
  * 試合詳細情報を取得
  */
 export async function getGameDetail(gameId: string) {
+  // UUIDバリデーション
+  if (!gameId || gameId === 'undefined' || gameId === 'null') {
+    console.error('Invalid game ID:', gameId)
+    return null
+  }
+
   const { data, error } = await supabase
     .from('games')
     .select(`
@@ -408,12 +411,11 @@ export async function getGameDetail(gameId: string) {
       result_type,
       teams:opponent_team_id (
         id,
-        name,
-        color_primary
+        name
       )
     `)
     .eq('id', gameId)
-    .single()
+    .maybeSingle()
 
   if (error) {
     console.error('Error fetching game detail:', error)
@@ -427,6 +429,12 @@ export async function getGameDetail(gameId: string) {
  * 試合の打者成績を取得
  */
 export async function getGameBatterStats(gameId: string) {
+  // UUIDバリデーション
+  if (!gameId || gameId === 'undefined' || gameId === 'null') {
+    console.error('Invalid game ID for batter stats:', gameId)
+    return []
+  }
+
   const { data, error } = await supabase
     .from('game_player_stats')
     .select(`
@@ -459,17 +467,23 @@ export async function getGameBatterStats(gameId: string) {
  * 試合の投手成績を取得
  */
 export async function getGamePitcherStats(gameId: string) {
+  // UUIDバリデーション
+  if (!gameId || gameId === 'undefined' || gameId === 'null') {
+    console.error('Invalid game ID for pitcher stats:', gameId)
+    return []
+  }
+
   const { data, error } = await supabase
     .from('game_pitcher_stats')
     .select(`
       player_id,
       result,
-      innings_pitched,
-      pitches,
-      hits_allowed,
+      innings,
+      balls,
+      hits,
       strikeouts,
       walks,
-      earned_runs,
+      runs,
       players (
         id,
         name,
@@ -491,18 +505,20 @@ export async function getGamePitcherStats(gameId: string) {
  * ユーザーの観戦メモを取得
  */
 export async function getUserMemo(gameId: string) {
+  // UUIDバリデーション
+  if (!gameId || gameId === 'undefined' || gameId === 'null') {
+    console.error('Invalid game ID for user memo:', gameId)
+    return null
+  }
+
   const { data, error } = await supabase
     .from('user_attendance')
     .select('id, memo')
     .eq('user_id', TEMP_USER_ID)
     .eq('game_id', gameId)
-    .single()
+    .maybeSingle()
 
   if (error) {
-    if (error.code === 'PGRST116') {
-      // データが見つからない場合
-      return null
-    }
     console.error('Error fetching user memo:', error)
     return null
   }

@@ -336,13 +336,13 @@ async function GameDetailContent({ gameId }: { gameId: string }) {
                               )}
                             </td>
                             <td className="px-3 py-3 text-center text-white">
-                              {stat.innings_pitched ?? '-'}
+                              {stat.innings ?? '-'}
                             </td>
                             <td className="px-3 py-3 text-center text-white">
-                              {stat.pitches ?? '-'}
+                              {stat.balls ?? '-'}
                             </td>
                             <td className="px-3 py-3 text-center text-white">
-                              {stat.hits_allowed ?? '-'}
+                              {stat.hits ?? '-'}
                             </td>
                             <td className="px-3 py-3 text-center text-white">
                               {stat.strikeouts ?? '-'}
@@ -351,7 +351,7 @@ async function GameDetailContent({ gameId }: { gameId: string }) {
                               {stat.walks ?? '-'}
                             </td>
                             <td className="px-3 py-3 text-center text-white">
-                              {stat.earned_runs ?? '-'}
+                              {stat.runs ?? '-'}
                             </td>
                           </tr>
                         ))
@@ -389,14 +389,17 @@ function GameDetailLoading() {
   )
 }
 
-export default function GameDetailPage({
+export default async function GameDetailPage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }> | { id: string }
 }) {
+  // Next.js 15対応：paramsが非同期の場合とそうでない場合の両方に対応
+  const resolvedParams = await Promise.resolve(params)
+
   return (
     <Suspense fallback={<GameDetailLoading />}>
-      <GameDetailContent gameId={params.id} />
+      <GameDetailContent gameId={resolvedParams.id} />
     </Suspense>
   )
 }
