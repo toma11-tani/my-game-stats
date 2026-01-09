@@ -223,3 +223,87 @@ export async function getAllGamesWithAttendance() {
     isAttended: attendedGameIds.has(game.id),
   }))
 }
+
+/**
+ * ユーザーの観戦履歴を詳細に取得（プロフィールページ用）
+ */
+export async function getAttendanceHistory() {
+  const { data, error } = await supabase
+    .from('user_attendance')
+    .select(`
+      id,
+      game_id,
+      memo,
+      created_at,
+      games (
+        id,
+        date,
+        opponent_team_id,
+        stadium,
+        home_score,
+        away_score,
+        result_type,
+        teams:opponent_team_id (
+          id,
+          name,
+          color_primary
+        )
+      )
+    `)
+    .eq('user_id', TEMP_USER_ID)
+    .order('games(date)', { ascending: false })
+
+  if (error) {
+    console.error('Error fetching attendance history:', error)
+    return []
+  }
+
+  return data || []
+}
+
+/**
+ * 球場別の観戦統計を取得
+ */
+export async function getStadiumStats() {
+  const { data, error } = await supabase
+    .from('user_attendance')
+    .select(`
+      games (
+        stadium,
+        result_type
+      )
+    `)
+    .eq('user_id', TEMP_USER_ID)
+
+  if (error) {
+    console.error('Error fetching stadium stats:', error)
+    return []
+  }
+
+  // 球場ごとに集計
+  const stadiumMap = new Map()
+
+  data?.forEach((attendance: any) => {
+    const game = attendance.games
+    const stadium = game?.stadium || '不明'
+
+    if (!stadiumMap.has(stadium)) {
+      stadiumMap.set(stadium, {
+        stadium,
+        total: 0,
+        wins: 0,
+        losses: 0,
+        draws: 0,
+      })
+    }
+
+    const stats = stadiumMap.get(stadium)
+    stats.total += 1
+
+    if (game?.result_type === 'win') stats.wins += 1
+    else if (game?.result_type === 'loss') stats.losses += 1
+    else if (game?.result_type === 'draw') stats.draws += 1
+  })
+
+  return Array.from(stadiumMap.values()).sort((a, b) => b.total - a.total)
+}
