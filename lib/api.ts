@@ -307,3 +307,87 @@ export async function getStadiumStats() {
 
   return Array.from(stadiumMap.values()).sort((a, b) => b.total - a.total)
 }
+
+/**
+ * 観戦時の選手成績を集計（新スキーマ対応）
+ */
+export async function getPlayerStatsForAttendedGames() {
+  // ユーザーが観戦した試合のIDリストを取得
+  const { data: attendedGames, error: gamesError } = await supabase
+    .from('user_attendance')
+    .select('game_id')
+    .eq('user_id', TEMP_USER_ID)
+
+  if (gamesError || !attendedGames) {
+    console.error('Error fetching attended games:', gamesError)
+    return []
+  }
+
+  const gameIds = attendedGames.map((g) => g.game_id)
+
+  if (gameIds.length === 0) {
+    return []
+  }
+
+  // それらの試合の選手成績を取得（新テーブル: game_player_stats）
+  const { data, error } = await supabase
+    .from('game_player_stats')
+    .select(`
+      game_id,
+      player_id,
+      at_bats,
+      hits,
+      homeruns,
+      rbi,
+      runs,
+      stolen_bases,
+      players (
+        id,
+        name,
+        position,
+        number
+      )
+    `)
+    .in('game_id', gameIds)
+
+  if (error) {
+    console.error('Error fetching player stats:', error)
+    return []
+  }
+
+  // 選手ごとに集計
+  const playerStatsMap = new Map()
+
+  data?.forEach((stat: any) => {
+    const playerId = stat.player_id
+    if (!playerStatsMap.has(playerId)) {
+      playerStatsMap.set(playerId, {
+        player: stat.players,
+        games: 0,
+        atBats: 0,
+        hits: 0,
+        homeruns: 0,
+        rbi: 0,
+        stolenBases: 0,
+        avg: 0,
+      })
+    }
+
+    const playerStats = playerStatsMap.get(playerId)
+    playerStats.games += 1
+    playerStats.atBats += stat.at_bats || 0
+    playerStats.hits += stat.hits || 0
+    playerStats.homeruns += stat.homeruns || 0
+    playerStats.rbi += stat.rbi || 0
+    playerStats.stolenBases += stat.stolen_bases || 0
+
+    // 打率計算（小数点3桁）
+    playerStats.avg = playerStats.atBats > 0
+      ? Math.round((playerStats.hits / playerStats.atBats) * 1000) / 1000
+      : 0
+  })
+
+  // 打率順にソート
+  return Array.from(playerStatsMap.values())
+    .sort((a, b) => b.avg - a.avg)
+}
