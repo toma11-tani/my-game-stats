@@ -1,6 +1,7 @@
 export interface Team {
   id: string
   name: string
+  abbreviation: string
   color_primary: string
   color_secondary: string | null
   created_at: string

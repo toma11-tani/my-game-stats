@@ -7,11 +7,20 @@ import { Button } from '@/components/ui/button'
 import { Check, ChevronRight } from 'lucide-react'
 import { checkInGame, checkOutGame } from '@/app/actions'
 
+interface Team {
+  id: string
+  name: string
+  abbreviation: string
+  color_primary: string
+  color_secondary: string | null
+}
+
 interface GameCardProps {
   game: {
     id: string
     date: string
-    opponent: string
+    homeTeam: Team | null
+    opponentTeam: Team | null
     result_type: string | null
     home_score: number | null
     away_score: number | null
@@ -86,7 +95,13 @@ export function GameCard({ game }: GameCardProps) {
             {/* 対戦カード */}
             <div className="flex items-center gap-2 mb-2">
               <div className="text-sm font-medium text-slate-900">
-                阪神 vs {game.opponent}
+                <span style={{ color: game.homeTeam?.color_primary || '#1e293b' }}>
+                  {game.homeTeam?.name || '阪神'}
+                </span>
+                {' vs '}
+                <span style={{ color: game.opponentTeam?.color_primary || '#1e293b' }}>
+                  {game.opponentTeam?.name || '未設定'}
+                </span>
               </div>
             </div>
 

@@ -1,5 +1,5 @@
 import { Suspense } from 'react'
-import { getAllGamesWithAttendance } from '@/lib/api'
+import { getAllGamesWithAttendance, getHomeTeam } from '@/lib/api'
 import { GameCard } from '@/components/game-card'
 import { Calendar } from 'lucide-react'
 
@@ -24,7 +24,10 @@ function groupGamesByMonth(games: any[]): GroupedGames {
 }
 
 async function GamesContent() {
-  const games = await getAllGamesWithAttendance()
+  const [games, homeTeam] = await Promise.all([
+    getAllGamesWithAttendance(),
+    getHomeTeam(),
+  ])
 
   const groupedGames = groupGamesByMonth(games)
   const monthKeys = Object.keys(groupedGames)
@@ -69,7 +72,8 @@ async function GamesContent() {
                       game={{
                         id: game.id,
                         date: game.date,
-                        opponent: game.teams?.name || '未設定',
+                        homeTeam: homeTeam,
+                        opponentTeam: game.teams,
                         result_type: game.result_type,
                         home_score: game.home_score,
                         away_score: game.away_score,

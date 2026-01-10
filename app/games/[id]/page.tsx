@@ -5,6 +5,7 @@ import {
   getGameBatterStats,
   getGamePitcherStats,
   getUserMemo,
+  getHomeTeam,
 } from '@/lib/api'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -27,11 +28,12 @@ function getResultLabel(resultType: string | null) {
 }
 
 async function GameDetailContent({ gameId }: { gameId: string }) {
-  const [game, batterStats, pitcherStats, userMemo] = await Promise.all([
+  const [game, batterStats, pitcherStats, userMemo, homeTeam] = await Promise.all([
     getGameDetail(gameId),
     getGameBatterStats(gameId),
     getGamePitcherStats(gameId),
     getUserMemo(gameId),
+    getHomeTeam(),
   ])
 
   if (!game) {
@@ -75,18 +77,31 @@ async function GameDetailContent({ gameId }: { gameId: string }) {
                 <div className="flex items-center gap-3">
                   {resultLabel && (
                     <span
-                      className={`text-xs font-bold px-2 py-1 rounded ${
-                        game.result_type === 'win'
-                          ? 'bg-[#F6D32D] text-slate-900'
-                          : game.result_type === 'loss'
-                          ? 'bg-slate-600 text-white'
-                          : 'bg-slate-500 text-white'
-                      }`}
+                      className="text-xs font-bold px-2 py-1 rounded"
+                      style={{
+                        backgroundColor:
+                          game.result_type === 'win'
+                            ? '#F6D32D'
+                            : game.result_type === 'loss'
+                            ? '#475569'
+                            : '#64748b',
+                        color:
+                          game.result_type === 'win'
+                            ? '#1e293b'
+                            : '#ffffff',
+                      }}
                     >
                       {resultLabel}
                     </span>
                   )}
-                  <span className="text-white font-bold text-lg">阪神</span>
+                  <span
+                    className="font-bold text-2xl"
+                    style={{
+                      color: homeTeam?.color_primary || '#ffffff',
+                    }}
+                  >
+                    {homeTeam?.abbreviation || '神'}
+                  </span>
                 </div>
                 <span className="text-3xl font-bold text-white">
                   {game.home_score ?? '-'}
@@ -97,8 +112,13 @@ async function GameDetailContent({ gameId }: { gameId: string }) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <span className="text-xs font-bold px-2 py-1 rounded bg-transparent w-8"></span>
-                  <span className="text-slate-300 font-bold text-lg">
-                    {opponent?.name || '相手チーム'}
+                  <span
+                    className="font-bold text-2xl"
+                    style={{
+                      color: opponent?.color_primary || '#cbd5e1',
+                    }}
+                  >
+                    {opponent?.abbreviation || opponent?.name || '-'}
                   </span>
                 </div>
                 <span className="text-3xl font-bold text-slate-300">
@@ -127,7 +147,14 @@ async function GameDetailContent({ gameId }: { gameId: string }) {
                 </thead>
                 <tbody className="text-white">
                   <tr className="border-b border-slate-700">
-                    <td className="px-2 py-2 text-left font-medium">阪神</td>
+                    <td
+                      className="px-2 py-2 text-left font-medium"
+                      style={{
+                        color: homeTeam?.color_primary || '#ffffff',
+                      }}
+                    >
+                      {homeTeam?.name || '阪神'}
+                    </td>
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((inning) => (
                       <td key={inning} className="px-2 py-2">
                         -
@@ -140,7 +167,12 @@ async function GameDetailContent({ gameId }: { gameId: string }) {
                     <td className="px-2 py-2">-</td>
                   </tr>
                   <tr>
-                    <td className="px-2 py-2 text-left font-medium text-slate-300">
+                    <td
+                      className="px-2 py-2 text-left font-medium"
+                      style={{
+                        color: opponent?.color_primary || '#cbd5e1',
+                      }}
+                    >
                       {opponent?.name || '相手'}
                     </td>
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((inning) => (

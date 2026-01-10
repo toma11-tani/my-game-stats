@@ -23,7 +23,10 @@ export async function getAttendedGames() {
         result_type,
         teams:opponent_team_id (
           id,
-          name
+          name,
+          abbreviation,
+          color_primary,
+          color_secondary
         )
       )
     `)
@@ -191,7 +194,10 @@ export async function getAllGamesWithAttendance() {
       result_type,
       teams:opponent_team_id (
         id,
-        name
+        name,
+        abbreviation,
+        color_primary,
+        color_secondary
       )
     `)
     .order('date', { ascending: false })
@@ -243,7 +249,10 @@ export async function getAttendanceHistory() {
         result_type,
         teams:opponent_team_id (
           id,
-          name
+          name,
+          abbreviation,
+          color_primary,
+          color_secondary
         )
       )
     `)
@@ -411,7 +420,10 @@ export async function getGameDetail(gameId: string) {
       result_type,
       teams:opponent_team_id (
         id,
-        name
+        name,
+        abbreviation,
+        color_primary,
+        color_secondary
       )
     `)
     .eq('id', gameId)
@@ -520,6 +532,24 @@ export async function getUserMemo(gameId: string) {
 
   if (error) {
     console.error('Error fetching user memo:', error)
+    return null
+  }
+
+  return data
+}
+
+/**
+ * ホームチーム（阪神タイガース）の情報を取得
+ */
+export async function getHomeTeam() {
+  const { data, error } = await supabase
+    .from('teams')
+    .select('id, name, abbreviation, color_primary, color_secondary')
+    .eq('name', '阪神')
+    .maybeSingle()
+
+  if (error) {
+    console.error('Error fetching home team:', error)
     return null
   }
 

@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { getAttendanceStats, getAttendanceHistory, getStadiumStats } from '@/lib/api'
+import { getAttendanceStats, getAttendanceHistory, getStadiumStats, getHomeTeam } from '@/lib/api'
 import { User, Trophy, MapPin, Calendar, MessageSquare } from 'lucide-react'
 
 function getResultLabel(resultType: string | null) {
@@ -23,10 +23,11 @@ function formatDate(dateString: string) {
 }
 
 async function ProfileContent() {
-  const [stats, history, stadiumStats] = await Promise.all([
+  const [stats, history, stadiumStats, homeTeam] = await Promise.all([
     getAttendanceStats(),
     getAttendanceHistory(),
     getStadiumStats(),
+    getHomeTeam(),
   ])
 
   return (
@@ -184,7 +185,13 @@ async function ProfileContent() {
 
                     {/* Opponent & Stadium */}
                     <div className="text-sm font-medium text-slate-900 mb-1">
-                      阪神 vs {opponent?.name || '未設定'}
+                      <span style={{ color: homeTeam?.color_primary || '#1e293b' }}>
+                        {homeTeam?.name || '阪神'}
+                      </span>
+                      {' vs '}
+                      <span style={{ color: opponent?.color_primary || '#1e293b' }}>
+                        {opponent?.name || '未設定'}
+                      </span>
                     </div>
                     <div className="text-xs text-slate-500 mb-2">
                       {game?.stadium}
