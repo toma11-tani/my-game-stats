@@ -597,14 +597,17 @@ export async function getBattingRankings() {
 
   const allPlayers = Array.from(playerStatsMap.values())
 
-  // 打率ランキング（規定打席以上、打率順）
+  // 打率ランキング（規定打席以上、打率順、同率の場合は打席数が多い順）
   const battingAverage = allPlayers
     .filter((p) => p.atBats >= qualifyingAtBats)
     .map((p) => ({
       ...p,
       avg: p.atBats > 0 ? p.hits / p.atBats : 0,
     }))
-    .sort((a, b) => b.avg - a.avg)
+    .sort((a, b) => {
+      if (b.avg !== a.avg) return b.avg - a.avg
+      return b.atBats - a.atBats // 打率が同じ場合は打席数が多い順
+    })
     .slice(0, 5)
 
   // 本塁打ランキング（0本除外、本塁打順）
@@ -740,14 +743,17 @@ export async function getPitchingRankings() {
 
   const allPitchers = Array.from(playerStatsMap.values())
 
-  // 失点率ランキング（規定投球回以上、失点率順・低い順）
+  // 失点率ランキング（規定投球回以上、失点率順・低い順、同率の場合は投球回が多い順）
   const earnedRunAverage = allPitchers
     .filter((p) => p.innings >= qualifyingInnings)
     .map((p) => ({
       ...p,
       era: p.innings > 0 ? (p.runs * 9) / p.innings : 0,
     }))
-    .sort((a, b) => a.era - b.era) // 低い順
+    .sort((a, b) => {
+      if (a.era !== b.era) return a.era - b.era // 失点率が低い順
+      return b.innings - a.innings // 失点率が同じ場合は投球回が多い順
+    })
     .slice(0, 5)
 
   // 勝利数ランキング（0勝除外、勝利数順）
