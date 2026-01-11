@@ -94,18 +94,42 @@ async function GameDetailContent({ gameId }: { gameId: string }) {
   while (paddedHomeInnings.length < maxInnings) paddedHomeInnings.push('-')
   while (paddedAwayInnings.length < maxInnings) paddedAwayInnings.push('-')
 
-  // 最終回裏の「X」表示処理（後攻チームが勝っていて攻撃しなかった場合）
+  // 最終回裏の「X」表示処理（後攻チームが勝っていて攻撃しなかった場合、またはサヨナラ勝ち）
   const homeScore = scoreboardData?.home_score ?? game.home_score
   const awayScore = scoreboardData?.away_score ?? game.away_score
+  const lastInningValue = paddedHomeInnings[maxInnings - 1]
+
+  // 空欄判定（'-', 'none', 'NONE', null, undefined, ''）
+  const isEmptyInning =
+    lastInningValue === '-' ||
+    lastInningValue === 'none' ||
+    lastInningValue === 'NONE' ||
+    lastInningValue === null ||
+    lastInningValue === undefined ||
+    lastInningValue === ''
+
   if (
-    paddedHomeInnings[maxInnings - 1] === '-' &&
     homeScore !== '-' &&
     awayScore !== '-' &&
     typeof homeScore === 'number' &&
     typeof awayScore === 'number' &&
     homeScore > awayScore
   ) {
-    paddedHomeInnings[maxInnings - 1] = 'X'
+    if (isEmptyInning) {
+      // 最終回裏が空欄で勝っている場合 → X
+      paddedHomeInnings[maxInnings - 1] = 'X'
+    } else if (typeof lastInningValue === 'number' && lastInningValue > 0) {
+      // 最終回裏に得点があり、かつ勝っている場合 → サヨナラ勝ちの可能性
+      // その得点を除いた合計を計算
+      const scoreBeforeLastInning = paddedHomeInnings
+        .slice(0, maxInnings - 1)
+        .reduce((sum, val) => sum + (typeof val === 'number' ? val : 0), 0)
+
+      // 最終回の得点がなければ負けていた場合 → サヨナラ勝ち
+      if (scoreBeforeLastInning <= awayScore) {
+        paddedHomeInnings[maxInnings - 1] = `${lastInningValue}X`
+      }
+    }
   }
 
   // スコアボード表示用のデータ（上段が先攻、下段が後攻）
