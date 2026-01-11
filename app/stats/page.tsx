@@ -80,14 +80,9 @@ async function StatsContent() {
               className="border rounded-lg bg-white shadow-sm"
             >
               <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                <div className="flex items-center gap-2">
-                  <span className="text-base font-semibold text-slate-900">
-                    打率
-                  </span>
-                  <span className="text-xs text-slate-500">
-                    (規定打席{battingRankings.qualifyingAtBats}以上)
-                  </span>
-                </div>
+                <span className="text-base font-semibold text-slate-900">
+                  打率
+                </span>
               </AccordionTrigger>
               <AccordionContent className="px-4 pb-4 pt-2">
                 {battingRankings.battingAverage.length === 0 ? (
@@ -106,7 +101,7 @@ async function StatsContent() {
                       />
                     ))}
                     <p className="text-xs text-slate-500 mt-3 pt-3 border-t">
-                      ※規定打席 = 観戦試合数 × 1
+                      ※規定打数 = 観戦試合数 × 1
                     </p>
                   </>
                 )}
@@ -212,14 +207,9 @@ async function StatsContent() {
               className="border rounded-lg bg-white shadow-sm"
             >
               <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                <div className="flex items-center gap-2">
-                  <span className="text-base font-semibold text-slate-900">
-                    失点率
-                  </span>
-                  <span className="text-xs text-slate-500">
-                    (規定投球回{pitchingRankings.qualifyingInnings}以上)
-                  </span>
-                </div>
+                <span className="text-base font-semibold text-slate-900">
+                  失点率
+                </span>
               </AccordionTrigger>
               <AccordionContent className="px-4 pb-4 pt-2">
                 {pitchingRankings.earnedRunAverage.length === 0 ? (
