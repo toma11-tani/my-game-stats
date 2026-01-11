@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trophy, TrendingUp } from "lucide-react";
+import { Trophy, TrendingUp, ChevronRight } from "lucide-react";
 import { getAttendanceStats, getAttendedGames } from "@/lib/api";
 import { DashboardSkeleton } from "@/components/dashboard-skeleton";
 
@@ -141,10 +141,16 @@ async function DashboardContent() {
                     <div className="text-sm font-medium text-slate-900 mb-1">
                       vs {game.opponent}
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                    <div className="flex items-center gap-2 text-xs text-slate-500 mb-2">
                       <span>{game.date}</span>
                       <span>•</span>
                       <span>{game.stadium}</span>
+                    </div>
+
+                    {/* View Details Indicator */}
+                    <div className="flex items-center gap-1 text-xs text-slate-400 group-hover:text-slate-600">
+                      <span>詳細を見る</span>
+                      <ChevronRight className="w-3 h-3" />
                     </div>
                   </Link>
                 </CardContent>

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { getAttendanceStats, getAttendanceHistory, getStadiumStats, getHomeTeam } from '@/lib/api'
 import { logout } from '@/app/login/actions'
-import { User, Trophy, MapPin, Calendar, MessageSquare, LogOut } from 'lucide-react'
+import { User, Trophy, MapPin, Calendar, MessageSquare, LogOut, ChevronRight } from 'lucide-react'
 
 function getResultLabel(resultType: string | null) {
   if (!resultType) return null
@@ -212,6 +212,12 @@ async function ProfileContent() {
                           </div>
                         </div>
                       )}
+
+                      {/* View Details Indicator */}
+                      <div className="flex items-center gap-1 text-xs text-slate-400 mt-2 group-hover:text-slate-600">
+                        <span>詳細を見る</span>
+                        <ChevronRight className="w-3 h-3" />
+                      </div>
                     </Link>
                   </CardContent>
                 </Card>
