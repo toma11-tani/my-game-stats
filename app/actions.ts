@@ -1,20 +1,26 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { supabase } from '@/lib/supabase'
-
-// 仮のユーザーID（将来的には認証から取得）
-const TEMP_USER_ID = '00000000-0000-0000-0000-000000000000'
+import { createClient } from '@/utils/supabase/server'
 
 /**
  * 試合に観戦チェックインする
  */
 export async function checkInGame(gameId: string) {
   try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { success: false, error: 'ログインが必要です' }
+    }
+
     const { error } = await supabase
       .from('user_attendance')
       .insert({
-        user_id: TEMP_USER_ID,
+        user_id: user.id,
         game_id: gameId,
       })
 
@@ -37,10 +43,19 @@ export async function checkInGame(gameId: string) {
  */
 export async function checkOutGame(gameId: string) {
   try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { success: false, error: 'ログインが必要です' }
+    }
+
     const { error } = await supabase
       .from('user_attendance')
       .delete()
-      .eq('user_id', TEMP_USER_ID)
+      .eq('user_id', user.id)
       .eq('game_id', gameId)
 
     if (error) {
@@ -62,11 +77,20 @@ export async function checkOutGame(gameId: string) {
  */
 export async function updateMemo(gameId: string, memo: string) {
   try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { success: false, error: 'ログインが必要です' }
+    }
+
     // まず既存のレコードを確認
     const { data: existing } = await supabase
       .from('user_attendance')
       .select('id')
-      .eq('user_id', TEMP_USER_ID)
+      .eq('user_id', user.id)
       .eq('game_id', gameId)
       .single()
 
@@ -75,7 +99,7 @@ export async function updateMemo(gameId: string, memo: string) {
       const { error } = await supabase
         .from('user_attendance')
         .update({ memo })
-        .eq('user_id', TEMP_USER_ID)
+        .eq('user_id', user.id)
         .eq('game_id', gameId)
 
       if (error) {
@@ -87,7 +111,7 @@ export async function updateMemo(gameId: string, memo: string) {
       const { error } = await supabase
         .from('user_attendance')
         .insert({
-          user_id: TEMP_USER_ID,
+          user_id: user.id,
           game_id: gameId,
           memo,
         })

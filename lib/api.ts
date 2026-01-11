@@ -1,13 +1,19 @@
-import { supabase } from './supabase'
+import { createClient } from '@/utils/supabase/server'
 import { Game, Team, GameStats, Player } from './types'
-
-// ユーザーIDは仮で固定（将来的には認証から取得）
-const TEMP_USER_ID = '00000000-0000-0000-0000-000000000000'
 
 /**
  * ユーザーが観戦した試合一覧を取得
  */
 export async function getAttendedGames() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return []
+  }
+
   const { data, error } = await supabase
     .from('user_attendance')
     .select(`
@@ -30,7 +36,7 @@ export async function getAttendedGames() {
         )
       )
     `)
-    .eq('user_id', TEMP_USER_ID)
+    .eq('user_id', user.id)
     .order('games(date)', { ascending: false })
 
   if (error) {
@@ -45,6 +51,21 @@ export async function getAttendedGames() {
  * 観戦成績を計算
  */
 export async function getAttendanceStats() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return {
+      totalGames: 0,
+      wins: 0,
+      losses: 0,
+      draws: 0,
+      winRate: 0,
+    }
+  }
+
   const { data, error } = await supabase
     .from('user_attendance')
     .select(`
@@ -52,7 +73,7 @@ export async function getAttendanceStats() {
         result_type
       )
     `)
-    .eq('user_id', TEMP_USER_ID)
+    .eq('user_id', user.id)
 
   if (error) {
     console.error('Error fetching attendance stats:', error)
@@ -82,105 +103,14 @@ export async function getAttendanceStats() {
 }
 
 /**
- * 特定の試合の選手成績を取得
- */
-export async function getGameStats(gameId: string) {
-  const { data, error } = await supabase
-    .from('game_stats')
-    .select(`
-      *,
-      players (
-        id,
-        name,
-        position,
-        number
-      )
-    `)
-    .eq('game_id', gameId)
-    .order('players(number)', { ascending: true })
-
-  if (error) {
-    console.error('Error fetching game stats:', error)
-    return []
-  }
-
-  return data || []
-}
-
-/**
- * 選手ごとの観戦時通算成績を取得
- */
-export async function getPlayerAttendanceStats() {
-  // ユーザーが観戦した試合のIDリストを取得
-  const { data: attendedGames, error: gamesError } = await supabase
-    .from('user_attendance')
-    .select('game_id')
-    .eq('user_id', TEMP_USER_ID)
-
-  if (gamesError || !attendedGames) {
-    console.error('Error fetching attended games:', gamesError)
-    return []
-  }
-
-  const gameIds = attendedGames.map((g) => g.game_id)
-
-  // それらの試合の選手成績を取得
-  const { data, error } = await supabase
-    .from('game_stats')
-    .select(`
-      *,
-      players (
-        id,
-        name,
-        position,
-        number
-      )
-    `)
-    .in('game_id', gameIds)
-
-  if (error) {
-    console.error('Error fetching player stats:', error)
-    return []
-  }
-
-  // 選手ごとに集計
-  const playerStatsMap = new Map()
-
-  data?.forEach((stat: any) => {
-    const playerId = stat.player_id
-    if (!playerStatsMap.has(playerId)) {
-      playerStatsMap.set(playerId, {
-        player: stat.players,
-        games: 0,
-        ab: 0,
-        h: 0,
-        hr: 0,
-        rbi: 0,
-        sb: 0,
-        avg: 0,
-      })
-    }
-
-    const playerStats = playerStatsMap.get(playerId)
-    playerStats.games += 1
-    playerStats.ab += stat.ab || 0
-    playerStats.h += stat.h || 0
-    playerStats.hr += stat.hr || 0
-    playerStats.rbi += stat.rbi || 0
-    playerStats.sb += stat.sb || 0
-    playerStats.avg = playerStats.ab > 0
-      ? Math.round((playerStats.h / playerStats.ab) * 1000) / 1000
-      : 0
-  })
-
-  return Array.from(playerStatsMap.values())
-    .sort((a, b) => b.avg - a.avg)
-}
-
-/**
  * すべての試合を取得（観戦済みステータス付き）
  */
 export async function getAllGamesWithAttendance() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   // すべての試合を取得
   const { data: games, error: gamesError } = await supabase
     .from('games')
@@ -207,11 +137,19 @@ export async function getAllGamesWithAttendance() {
     return []
   }
 
+  if (!user) {
+    // ログインしていない場合はすべて未観戦扱い
+    return (games || []).map((game) => ({
+      ...game,
+      isAttended: false,
+    }))
+  }
+
   // ユーザーが観戦した試合のIDリストを取得
   const { data: attendedGames, error: attendanceError } = await supabase
     .from('user_attendance')
     .select('game_id')
-    .eq('user_id', TEMP_USER_ID)
+    .eq('user_id', user.id)
 
   if (attendanceError) {
     console.error('Error fetching attendance:', attendanceError)
@@ -232,6 +170,15 @@ export async function getAllGamesWithAttendance() {
  * ユーザーの観戦履歴を詳細に取得（プロフィールページ用）
  */
 export async function getAttendanceHistory() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return []
+  }
+
   const { data, error } = await supabase
     .from('user_attendance')
     .select(`
@@ -256,7 +203,7 @@ export async function getAttendanceHistory() {
         )
       )
     `)
-    .eq('user_id', TEMP_USER_ID)
+    .eq('user_id', user.id)
     .order('games(date)', { ascending: false })
 
   if (error) {
@@ -271,6 +218,15 @@ export async function getAttendanceHistory() {
  * 球場別の観戦統計を取得
  */
 export async function getStadiumStats() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return []
+  }
+
   const { data, error } = await supabase
     .from('user_attendance')
     .select(`
@@ -279,7 +235,7 @@ export async function getStadiumStats() {
         result_type
       )
     `)
-    .eq('user_id', TEMP_USER_ID)
+    .eq('user_id', user.id)
 
   if (error) {
     console.error('Error fetching stadium stats:', error)
@@ -315,93 +271,11 @@ export async function getStadiumStats() {
 }
 
 /**
- * 観戦時の選手成績を集計（新スキーマ対応）
- */
-export async function getPlayerStatsForAttendedGames() {
-  // ユーザーが観戦した試合のIDリストを取得
-  const { data: attendedGames, error: gamesError } = await supabase
-    .from('user_attendance')
-    .select('game_id')
-    .eq('user_id', TEMP_USER_ID)
-
-  if (gamesError || !attendedGames) {
-    console.error('Error fetching attended games:', gamesError)
-    return []
-  }
-
-  const gameIds = attendedGames.map((g) => g.game_id)
-
-  if (gameIds.length === 0) {
-    return []
-  }
-
-  // それらの試合の選手成績を取得（新テーブル: game_player_stats）
-  const { data, error } = await supabase
-    .from('game_player_stats')
-    .select(`
-      game_id,
-      player_id,
-      at_bats,
-      hits,
-      homeruns,
-      rbi,
-      runs,
-      stolen_bases,
-      players (
-        id,
-        name,
-        position,
-        number
-      )
-    `)
-    .in('game_id', gameIds)
-
-  if (error) {
-    console.error('Error fetching player stats:', error)
-    return []
-  }
-
-  // 選手ごとに集計
-  const playerStatsMap = new Map()
-
-  data?.forEach((stat: any) => {
-    const playerId = stat.player_id
-    if (!playerStatsMap.has(playerId)) {
-      playerStatsMap.set(playerId, {
-        player: stat.players,
-        games: 0,
-        atBats: 0,
-        hits: 0,
-        homeruns: 0,
-        rbi: 0,
-        stolenBases: 0,
-        avg: 0,
-      })
-    }
-
-    const playerStats = playerStatsMap.get(playerId)
-    playerStats.games += 1
-    playerStats.atBats += stat.at_bats || 0
-    playerStats.hits += stat.hits || 0
-    playerStats.homeruns += stat.homeruns || 0
-    playerStats.rbi += stat.rbi || 0
-    playerStats.stolenBases += stat.stolen_bases || 0
-
-    // 打率計算（小数点3桁）
-    playerStats.avg = playerStats.atBats > 0
-      ? Math.round((playerStats.hits / playerStats.atBats) * 1000) / 1000
-      : 0
-  })
-
-  // 打率順にソート
-  return Array.from(playerStatsMap.values())
-    .sort((a, b) => b.avg - a.avg)
-}
-
-/**
  * 試合詳細情報を取得
  */
 export async function getGameDetail(gameId: string) {
+  const supabase = await createClient()
+
   // UUIDバリデーション
   if (!gameId || gameId === 'undefined' || gameId === 'null') {
     console.error('Invalid game ID:', gameId)
@@ -441,6 +315,8 @@ export async function getGameDetail(gameId: string) {
  * 試合の打者成績を取得
  */
 export async function getGameBatterStats(gameId: string) {
+  const supabase = await createClient()
+
   // UUIDバリデーション
   if (!gameId || gameId === 'undefined' || gameId === 'null') {
     console.error('Invalid game ID for batter stats:', gameId)
@@ -478,6 +354,8 @@ export async function getGameBatterStats(gameId: string) {
  * 試合の投手成績を取得
  */
 export async function getGamePitcherStats(gameId: string) {
+  const supabase = await createClient()
+
   // UUIDバリデーション
   if (!gameId || gameId === 'undefined' || gameId === 'null') {
     console.error('Invalid game ID for pitcher stats:', gameId)
@@ -516,6 +394,15 @@ export async function getGamePitcherStats(gameId: string) {
  * ユーザーの観戦メモを取得
  */
 export async function getUserMemo(gameId: string) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return null
+  }
+
   // UUIDバリデーション
   if (!gameId || gameId === 'undefined' || gameId === 'null') {
     console.error('Invalid game ID for user memo:', gameId)
@@ -525,7 +412,7 @@ export async function getUserMemo(gameId: string) {
   const { data, error } = await supabase
     .from('user_attendance')
     .select('id, memo')
-    .eq('user_id', TEMP_USER_ID)
+    .eq('user_id', user.id)
     .eq('game_id', gameId)
     .maybeSingle()
 
@@ -541,6 +428,8 @@ export async function getUserMemo(gameId: string) {
  * ホームチーム（阪神タイガース）の情報を取得
  */
 export async function getHomeTeam() {
+  const supabase = await createClient()
+
   const { data, error } = await supabase
     .from('teams')
     .select('id, name, abbreviation, color_primary, color_secondary')
@@ -560,6 +449,8 @@ export async function getHomeTeam() {
  * @param gameId - games.id と同じUUID
  */
 export async function getGameScoreboardData(gameId: string) {
+  const supabase = await createClient()
+
   // UUIDバリデーション
   if (!gameId || gameId === 'undefined' || gameId === 'null') {
     console.error('Invalid game ID for scoreboard data:', gameId)
@@ -584,10 +475,19 @@ export async function getGameScoreboardData(gameId: string) {
  * 観戦試合数を取得
  */
 export async function getAttendedGamesCount() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return 0
+  }
+
   const { data, error } = await supabase
     .from('user_attendance')
     .select('game_id')
-    .eq('user_id', TEMP_USER_ID)
+    .eq('user_id', user.id)
 
   if (error) {
     console.error('Error fetching attended games count:', error)
@@ -601,15 +501,31 @@ export async function getAttendedGamesCount() {
  * 打撃ランキングを取得
  */
 export async function getBattingRankings() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   // 観戦試合数を取得
   const attendedGamesCount = await getAttendedGamesCount()
   const qualifyingAtBats = attendedGamesCount * 1 // 規定打席
+
+  if (!user) {
+    return {
+      battingAverage: [],
+      homeruns: [],
+      rbi: [],
+      stolenBases: [],
+      qualifyingAtBats,
+      attendedGamesCount,
+    }
+  }
 
   // ユーザーが観戦した試合のIDリストを取得
   const { data: attendedGames, error: gamesError } = await supabase
     .from('user_attendance')
     .select('game_id')
-    .eq('user_id', TEMP_USER_ID)
+    .eq('user_id', user.id)
 
   if (gamesError || !attendedGames || attendedGames.length === 0) {
     return {
@@ -723,15 +639,31 @@ export async function getBattingRankings() {
  * 投手ランキングを取得
  */
 export async function getPitchingRankings() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   // 観戦試合数を取得
   const attendedGamesCount = await getAttendedGamesCount()
   const qualifyingInnings = attendedGamesCount * 0.5 // 規定投球回
+
+  if (!user) {
+    return {
+      earnedRunAverage: [],
+      wins: [],
+      innings: [],
+      strikeouts: [],
+      qualifyingInnings,
+      attendedGamesCount,
+    }
+  }
 
   // ユーザーが観戦した試合のIDリストを取得
   const { data: attendedGames, error: gamesError } = await supabase
     .from('user_attendance')
     .select('game_id')
-    .eq('user_id', TEMP_USER_ID)
+    .eq('user_id', user.id)
 
   if (gamesError || !attendedGames || attendedGames.length === 0) {
     return {

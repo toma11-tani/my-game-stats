@@ -1,7 +1,9 @@
 import { Suspense } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { getAttendanceStats, getAttendanceHistory, getStadiumStats, getHomeTeam } from '@/lib/api'
-import { User, Trophy, MapPin, Calendar, MessageSquare } from 'lucide-react'
+import { logout } from '@/app/login/actions'
+import { User, Trophy, MapPin, Calendar, MessageSquare, LogOut } from 'lucide-react'
 
 function getResultLabel(resultType: string | null) {
   if (!resultType) return null
@@ -214,6 +216,20 @@ async function ProfileContent() {
             })}
           </div>
         )}
+      </div>
+
+      {/* Logout Button */}
+      <div className="px-4 pb-24 mb-6">
+        <form action={logout}>
+          <Button
+            type="submit"
+            variant="outline"
+            className="w-full border-slate-300 text-slate-700 hover:bg-slate-50"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            ログアウト
+          </Button>
+        </form>
       </div>
     </div>
   )
