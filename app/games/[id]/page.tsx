@@ -72,39 +72,46 @@ async function GameDetailContent({ gameId }: { gameId: string }) {
   const resultLabel = getResultLabel(game.result_type)
 
   // 甲子園・京セラドームでは阪神が後攻（ホーム）
+  // DB構造: 甲子園/京セラ=home:阪神/away:対戦相手、それ以外=home:対戦相手/away:阪神
   const isHomeGame =
     game.stadium.includes('甲子園') || game.stadium.includes('京セラドーム')
 
   // スコアボードデータを処理（配列形式）
-  const homeInnings = scoreboardData?.home_innings || Array(9).fill('-')
-  const awayInnings = scoreboardData?.away_innings || Array(9).fill('-')
+  const homeInnings = scoreboardData?.home_innings || []
+  const awayInnings = scoreboardData?.away_innings || []
   const homeHits = scoreboardData?.home_hits ?? '-'
   const homeErrors = scoreboardData?.home_errors ?? '-'
   const awayHits = scoreboardData?.away_hits ?? '-'
   const awayErrors = scoreboardData?.away_errors ?? '-'
 
-  // イニング配列が9未満の場合は'-'で埋める
+  // 延長戦対応: 最大イニング数を計算（最低9回）
+  const maxInnings = Math.max(9, homeInnings.length, awayInnings.length)
+  const inningNumbers = Array.from({ length: maxInnings }, (_, i) => i + 1)
+
+  // イニング配列を最大イニング数に合わせて'-'で埋める
   const paddedHomeInnings = [...homeInnings]
   const paddedAwayInnings = [...awayInnings]
-  while (paddedHomeInnings.length < 9) paddedHomeInnings.push('-')
-  while (paddedAwayInnings.length < 9) paddedAwayInnings.push('-')
+  while (paddedHomeInnings.length < maxInnings) paddedHomeInnings.push('-')
+  while (paddedAwayInnings.length < maxInnings) paddedAwayInnings.push('-')
 
   // スコアボード表示用のデータ（上段が先攻、下段が後攻）
+  // 甲子園/京セラ: home=阪神(後攻), away=対戦相手(先攻)
+  // それ以外: home=対戦相手(後攻), away=阪神(先攻)
   const topTeam = isHomeGame ? opponent : homeTeam
-  const topInnings = isHomeGame ? paddedAwayInnings : paddedHomeInnings
+  const topInnings = isHomeGame ? paddedAwayInnings : paddedAwayInnings
   const topScore = isHomeGame
     ? scoreboardData?.away_score ?? game.away_score ?? '-'
-    : scoreboardData?.home_score ?? game.home_score ?? '-'
-  const topHits = isHomeGame ? awayHits : homeHits
-  const topErrors = isHomeGame ? awayErrors : homeErrors
+    : scoreboardData?.away_score ?? game.away_score ?? '-'
+  const topHits = isHomeGame ? awayHits : awayHits
+  const topErrors = isHomeGame ? awayErrors : awayErrors
 
   const bottomTeam = isHomeGame ? homeTeam : opponent
-  const bottomInnings = isHomeGame ? paddedHomeInnings : paddedAwayInnings
+  const bottomInnings = isHomeGame ? paddedHomeInnings : paddedHomeInnings
   const bottomScore = isHomeGame
     ? scoreboardData?.home_score ?? game.home_score ?? '-'
-    : scoreboardData?.away_score ?? game.away_score ?? '-'
-  const bottomHits = isHomeGame ? homeHits : awayHits
-  const bottomErrors = isHomeGame ? homeErrors : awayErrors
+    : scoreboardData?.home_score ?? game.home_score ?? '-'
+  const bottomHits = isHomeGame ? homeHits : homeHits
+  const bottomErrors = isHomeGame ? homeErrors : homeErrors
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -140,7 +147,7 @@ async function GameDetailContent({ gameId }: { gameId: string }) {
                   <thead>
                     <tr className="text-slate-600 border-b border-slate-200 bg-slate-50">
                       <th className="px-2 py-2 font-medium"></th>
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((inning) => (
+                      {inningNumbers.map((inning) => (
                         <th key={inning} className="px-2 py-2 font-medium">
                           {inning}
                         </th>
