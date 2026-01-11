@@ -94,6 +94,20 @@ async function GameDetailContent({ gameId }: { gameId: string }) {
   while (paddedHomeInnings.length < maxInnings) paddedHomeInnings.push('-')
   while (paddedAwayInnings.length < maxInnings) paddedAwayInnings.push('-')
 
+  // 最終回裏の「X」表示処理（後攻チームが勝っていて攻撃しなかった場合）
+  const homeScore = scoreboardData?.home_score ?? game.home_score
+  const awayScore = scoreboardData?.away_score ?? game.away_score
+  if (
+    paddedHomeInnings[maxInnings - 1] === '-' &&
+    homeScore !== '-' &&
+    awayScore !== '-' &&
+    typeof homeScore === 'number' &&
+    typeof awayScore === 'number' &&
+    homeScore > awayScore
+  ) {
+    paddedHomeInnings[maxInnings - 1] = 'X'
+  }
+
   // スコアボード表示用のデータ（上段が先攻、下段が後攻）
   // 甲子園/京セラ: home=阪神(後攻), away=対戦相手(先攻)
   // それ以外: home=対戦相手(後攻), away=阪神(先攻)
