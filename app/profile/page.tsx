@@ -152,17 +152,18 @@ async function ProfileContent() {
               const resultType = game?.result_type
 
               return (
-                <Link key={attendance.id} href={`/games/${game?.id}`}>
-                  <Card
-                    className={`shadow-sm hover:shadow-md transition-shadow border-0 cursor-pointer ${
-                      resultType === 'win'
-                        ? 'border-l-4 border-l-[#F6D32D] bg-white'
-                        : resultType === 'loss'
-                        ? 'border-l-4 border-l-slate-300 bg-slate-50'
-                        : 'border-l-4 border-l-slate-400 bg-white'
-                    }`}
-                  >
-                    <CardContent className="p-4">
+                <Card
+                  key={attendance.id}
+                  className={`shadow-sm hover:shadow-md transition-shadow border-0 ${
+                    resultType === 'win'
+                      ? 'border-l-4 border-l-[#F6D32D] bg-white'
+                      : resultType === 'loss'
+                      ? 'border-l-4 border-l-slate-300 bg-slate-50'
+                      : 'border-l-4 border-l-slate-400 bg-white'
+                  }`}
+                >
+                  <CardContent className="p-4">
+                    <Link href={`/games/${game?.id}`} className="block group">
                       {/* Date */}
                       <div className="text-xs text-slate-500 mb-2">
                         {formatDate(game?.date || '')}
@@ -211,9 +212,9 @@ async function ProfileContent() {
                           </div>
                         </div>
                       )}
-                    </CardContent>
-                  </Card>
-                </Link>
+                    </Link>
+                  </CardContent>
+                </Card>
               )
             })}
           </div>
