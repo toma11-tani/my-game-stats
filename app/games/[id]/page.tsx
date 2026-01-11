@@ -67,8 +67,13 @@ async function GameDetailContent({ gameId }: { gameId: string }) {
     notFound()
   }
 
-  const opponent = game.teams
+  // teams は配列の可能性があるため、配列の場合は最初の要素を取得
+  const opponent = Array.isArray(game.teams) ? game.teams[0] : game.teams
   const resultLabel = getResultLabel(game.result_type)
+
+  // 甲子園・京セラドームでは阪神が後攻（ホーム）
+  const isHomeGame =
+    game.stadium.includes('甲子園') || game.stadium.includes('京セラドーム')
 
   // スコアボードデータを処理（配列形式）
   const homeInnings = scoreboardData?.home_innings || Array(9).fill('-')
@@ -83,6 +88,23 @@ async function GameDetailContent({ gameId }: { gameId: string }) {
   const paddedAwayInnings = [...awayInnings]
   while (paddedHomeInnings.length < 9) paddedHomeInnings.push('-')
   while (paddedAwayInnings.length < 9) paddedAwayInnings.push('-')
+
+  // スコアボード表示用のデータ（上段が先攻、下段が後攻）
+  const topTeam = isHomeGame ? opponent : homeTeam
+  const topInnings = isHomeGame ? paddedAwayInnings : paddedHomeInnings
+  const topScore = isHomeGame
+    ? scoreboardData?.away_score ?? game.away_score ?? '-'
+    : scoreboardData?.home_score ?? game.home_score ?? '-'
+  const topHits = isHomeGame ? awayHits : homeHits
+  const topErrors = isHomeGame ? awayErrors : homeErrors
+
+  const bottomTeam = isHomeGame ? homeTeam : opponent
+  const bottomInnings = isHomeGame ? paddedHomeInnings : paddedAwayInnings
+  const bottomScore = isHomeGame
+    ? scoreboardData?.home_score ?? game.home_score ?? '-'
+    : scoreboardData?.away_score ?? game.away_score ?? '-'
+  const bottomHits = isHomeGame ? homeHits : awayHits
+  const bottomErrors = isHomeGame ? homeErrors : awayErrors
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -131,45 +153,47 @@ async function GameDetailContent({ gameId }: { gameId: string }) {
                     </tr>
                   </thead>
                   <tbody className="text-slate-900">
+                    {/* 上段: 先攻チーム */}
                     <tr className="border-b border-slate-200">
                       <td
                         className="px-2 py-2 text-center font-bold"
                         style={{
-                          color: homeTeam?.color_primary || '#F6D32D',
+                          color: topTeam?.color_primary || '#64748b',
                         }}
                       >
-                        {homeTeam?.abbreviation || '神'}
+                        {topTeam?.abbreviation || '-'}
                       </td>
-                      {paddedHomeInnings.map((score, index) => (
+                      {topInnings.map((score, index) => (
                         <td key={index} className="px-2 py-2">
                           {score}
                         </td>
                       ))}
                       <td className="px-2 py-2 border-l border-slate-200 font-bold">
-                        {scoreboardData?.home_score ?? game.home_score ?? '-'}
+                        {topScore}
                       </td>
-                      <td className="px-2 py-2">{homeHits}</td>
-                      <td className="px-2 py-2">{homeErrors}</td>
+                      <td className="px-2 py-2">{topHits}</td>
+                      <td className="px-2 py-2">{topErrors}</td>
                     </tr>
+                    {/* 下段: 後攻チーム */}
                     <tr>
                       <td
                         className="px-2 py-2 text-center font-bold"
                         style={{
-                          color: opponent?.color_primary || '#64748b',
+                          color: bottomTeam?.color_primary || '#64748b',
                         }}
                       >
-                        {opponent?.abbreviation || '-'}
+                        {bottomTeam?.abbreviation || '-'}
                       </td>
-                      {paddedAwayInnings.map((score, index) => (
+                      {bottomInnings.map((score, index) => (
                         <td key={index} className="px-2 py-2 text-slate-700">
                           {score}
                         </td>
                       ))}
                       <td className="px-2 py-2 border-l border-slate-200 font-bold text-slate-700">
-                        {scoreboardData?.away_score ?? game.away_score ?? '-'}
+                        {bottomScore}
                       </td>
-                      <td className="px-2 py-2 text-slate-700">{awayHits}</td>
-                      <td className="px-2 py-2 text-slate-700">{awayErrors}</td>
+                      <td className="px-2 py-2 text-slate-700">{bottomHits}</td>
+                      <td className="px-2 py-2 text-slate-700">{bottomErrors}</td>
                     </tr>
                   </tbody>
                 </table>
