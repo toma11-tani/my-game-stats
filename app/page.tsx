@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trophy, TrendingUp } from "lucide-react";
 import { getAttendanceStats, getAttendedGames } from "@/lib/api";
@@ -115,41 +116,42 @@ async function DashboardContent() {
         ) : (
           <div className="space-y-3">
             {recentGames.map((game) => (
-              <Card
-                key={game.id}
-                className="bg-white shadow-sm hover:shadow-md transition-shadow border-0"
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span
-                          className={`inline-flex items-center justify-center w-12 h-6 rounded-full text-xs font-semibold ${
-                            game.resultType === "win"
-                              ? "bg-green-100 text-green-700"
-                              : game.resultType === "loss"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-slate-100 text-slate-700"
-                          }`}
-                        >
-                          {game.result}
-                        </span>
-                        <span className="text-sm font-medium text-slate-900">
-                          {game.score}
-                        </span>
-                      </div>
-                      <div className="text-sm font-medium text-slate-900 mb-1">
-                        vs {game.opponent}
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-slate-500">
-                        <span>{game.date}</span>
-                        <span>•</span>
-                        <span>{game.stadium}</span>
+              <Link key={game.id} href={`/games/${game.id}`}>
+                <Card
+                  className="bg-white shadow-sm hover:shadow-md transition-shadow border-0 cursor-pointer"
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span
+                            className={`inline-flex items-center justify-center w-12 h-6 rounded-full text-xs font-semibold ${
+                              game.resultType === "win"
+                                ? "bg-green-100 text-green-700"
+                                : game.resultType === "loss"
+                                ? "bg-red-100 text-red-700"
+                                : "bg-slate-100 text-slate-700"
+                            }`}
+                          >
+                            {game.result}
+                          </span>
+                          <span className="text-sm font-medium text-slate-900">
+                            {game.score}
+                          </span>
+                        </div>
+                        <div className="text-sm font-medium text-slate-900 mb-1">
+                          vs {game.opponent}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                          <span>{game.date}</span>
+                          <span>•</span>
+                          <span>{game.stadium}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
         )}

@@ -1,4 +1,5 @@
 import { Suspense } from 'react'
+import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { getAttendanceStats, getAttendanceHistory, getStadiumStats, getHomeTeam } from '@/lib/api'
@@ -151,67 +152,68 @@ async function ProfileContent() {
               const resultType = game?.result_type
 
               return (
-                <Card
-                  key={attendance.id}
-                  className={`shadow-sm hover:shadow-md transition-shadow border-0 ${
-                    resultType === 'win'
-                      ? 'border-l-4 border-l-[#F6D32D] bg-white'
-                      : resultType === 'loss'
-                      ? 'border-l-4 border-l-slate-300 bg-slate-50'
-                      : 'border-l-4 border-l-slate-400 bg-white'
-                  }`}
-                >
-                  <CardContent className="p-4">
-                    {/* Date */}
-                    <div className="text-xs text-slate-500 mb-2">
-                      {formatDate(game?.date || '')}
-                    </div>
-
-                    {/* Match Info */}
-                    <div className="flex items-center gap-2 mb-2">
-                      <span
-                        className={`inline-flex items-center justify-center px-2 py-1 rounded text-xs font-semibold ${
-                          resultType === 'win'
-                            ? 'bg-green-100 text-green-700'
-                            : resultType === 'loss'
-                            ? 'bg-red-100 text-red-700'
-                            : 'bg-slate-100 text-slate-700'
-                        }`}
-                      >
-                        {getResultLabel(resultType)}
-                      </span>
-                      <span className="text-sm font-medium text-slate-900">
-                        {game?.home_score} - {game?.away_score}
-                      </span>
-                    </div>
-
-                    {/* Opponent & Stadium */}
-                    <div className="text-sm font-medium text-slate-900 mb-1">
-                      <span style={{ color: homeTeam?.color_primary || '#1e293b' }}>
-                        {homeTeam?.name || '阪神'}
-                      </span>
-                      {' vs '}
-                      <span style={{ color: opponent?.color_primary || '#1e293b' }}>
-                        {opponent?.name || '未設定'}
-                      </span>
-                    </div>
-                    <div className="text-xs text-slate-500 mb-2">
-                      {game?.stadium}
-                    </div>
-
-                    {/* Memo */}
-                    {attendance.memo && (
-                      <div className="mt-3 pt-3 border-t border-slate-100">
-                        <div className="flex items-start gap-2">
-                          <MessageSquare className="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0" />
-                          <p className="text-sm text-slate-700 leading-relaxed">
-                            {attendance.memo}
-                          </p>
-                        </div>
+                <Link key={attendance.id} href={`/games/${game?.id}`}>
+                  <Card
+                    className={`shadow-sm hover:shadow-md transition-shadow border-0 cursor-pointer ${
+                      resultType === 'win'
+                        ? 'border-l-4 border-l-[#F6D32D] bg-white'
+                        : resultType === 'loss'
+                        ? 'border-l-4 border-l-slate-300 bg-slate-50'
+                        : 'border-l-4 border-l-slate-400 bg-white'
+                    }`}
+                  >
+                    <CardContent className="p-4">
+                      {/* Date */}
+                      <div className="text-xs text-slate-500 mb-2">
+                        {formatDate(game?.date || '')}
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
+
+                      {/* Match Info */}
+                      <div className="flex items-center gap-2 mb-2">
+                        <span
+                          className={`inline-flex items-center justify-center px-2 py-1 rounded text-xs font-semibold ${
+                            resultType === 'win'
+                              ? 'bg-green-100 text-green-700'
+                              : resultType === 'loss'
+                              ? 'bg-red-100 text-red-700'
+                              : 'bg-slate-100 text-slate-700'
+                          }`}
+                        >
+                          {getResultLabel(resultType)}
+                        </span>
+                        <span className="text-sm font-medium text-slate-900">
+                          {game?.home_score} - {game?.away_score}
+                        </span>
+                      </div>
+
+                      {/* Opponent & Stadium */}
+                      <div className="text-sm font-medium text-slate-900 mb-1">
+                        <span style={{ color: homeTeam?.color_primary || '#1e293b' }}>
+                          {homeTeam?.name || '阪神'}
+                        </span>
+                        {' vs '}
+                        <span style={{ color: opponent?.color_primary || '#1e293b' }}>
+                          {opponent?.name || '未設定'}
+                        </span>
+                      </div>
+                      <div className="text-xs text-slate-500 mb-2">
+                        {game?.stadium}
+                      </div>
+
+                      {/* Memo */}
+                      {attendance.memo && (
+                        <div className="mt-3 pt-3 border-t border-slate-100">
+                          <div className="flex items-start gap-2">
+                            <MessageSquare className="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0" />
+                            <p className="text-sm text-slate-700 leading-relaxed">
+                              {attendance.memo}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </Link>
               )
             })}
           </div>

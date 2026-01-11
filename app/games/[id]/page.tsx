@@ -71,10 +71,10 @@ async function GameDetailContent({ gameId }: { gameId: string }) {
   const opponent = Array.isArray(game.teams) ? game.teams[0] : game.teams
   const resultLabel = getResultLabel(game.result_type)
 
-  // 甲子園・京セラドームでは阪神が後攻（ホーム）
+  // 甲子園・京セラD大阪では阪神が後攻（ホーム）
   // DB構造: 甲子園/京セラ=home:阪神/away:対戦相手、それ以外=home:対戦相手/away:阪神
   const isHomeGame =
-    game.stadium.includes('甲子園') || game.stadium.includes('京セラドーム')
+    game.stadium.includes('甲子園') || game.stadium.includes('京セラD大阪')
 
   // スコアボードデータを処理（配列形式）
   const homeInnings = scoreboardData?.home_innings || []
