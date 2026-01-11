@@ -38,9 +38,9 @@ export function MemoEditor({ gameId, initialMemo }: MemoEditorProps) {
   }
 
   return (
-    <Card className="bg-slate-800 border-slate-700">
+    <Card className="bg-white border-slate-200 shadow-sm">
       <CardHeader>
-        <CardTitle className="text-white flex items-center gap-2">
+        <CardTitle className="text-slate-900 flex items-center gap-2">
           <MessageSquare className="w-5 h-5 text-[#F6D32D]" />
           観戦メモ
         </CardTitle>
@@ -50,7 +50,7 @@ export function MemoEditor({ gameId, initialMemo }: MemoEditorProps) {
           value={memo}
           onChange={(e) => setMemo(e.target.value)}
           placeholder="この試合の感想や思い出を記録しましょう..."
-          className="min-h-[120px] bg-slate-900 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-[#F6D32D]"
+          className="min-h-[120px] bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus-visible:ring-[#F6D32D]"
           disabled={isPending}
         />
 
@@ -58,8 +58,8 @@ export function MemoEditor({ gameId, initialMemo }: MemoEditorProps) {
           <div
             className={`text-sm p-3 rounded ${
               message.type === 'success'
-                ? 'bg-green-500/10 text-green-500 border border-green-500/20'
-                : 'bg-red-500/10 text-red-500 border border-red-500/20'
+                ? 'bg-green-50 text-green-700 border border-green-200'
+                : 'bg-red-50 text-red-700 border border-red-200'
             }`}
           >
             {message.text}

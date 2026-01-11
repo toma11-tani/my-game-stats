@@ -465,7 +465,6 @@ export async function getGameBatterStats(gameId: string) {
       )
     `)
     .eq('game_id', gameId)
-    .order('players(number)', { ascending: true })
 
   if (error) {
     console.error('Error fetching batter stats:', error)
@@ -554,4 +553,295 @@ export async function getHomeTeam() {
   }
 
   return data
+}
+
+/**
+ * 試合のスコアボードデータを取得
+ * @param gameId - games.id と同じUUID
+ */
+export async function getGameScoreboardData(gameId: string) {
+  // UUIDバリデーション
+  if (!gameId || gameId === 'undefined' || gameId === 'null') {
+    console.error('Invalid game ID for scoreboard data:', gameId)
+    return null
+  }
+
+  const { data, error } = await supabase
+    .from('game_stats')
+    .select('*')
+    .eq('game_id', gameId)
+    .maybeSingle()
+
+  if (error) {
+    console.error('Error fetching scoreboard data:', error)
+    return null
+  }
+
+  return data
+}
+
+/**
+ * 観戦試合数を取得
+ */
+export async function getAttendedGamesCount() {
+  const { data, error } = await supabase
+    .from('user_attendance')
+    .select('game_id')
+    .eq('user_id', TEMP_USER_ID)
+
+  if (error) {
+    console.error('Error fetching attended games count:', error)
+    return 0
+  }
+
+  return data?.length || 0
+}
+
+/**
+ * 打撃ランキングを取得
+ */
+export async function getBattingRankings() {
+  // 観戦試合数を取得
+  const attendedGamesCount = await getAttendedGamesCount()
+  const qualifyingAtBats = attendedGamesCount * 1 // 規定打席
+
+  // ユーザーが観戦した試合のIDリストを取得
+  const { data: attendedGames, error: gamesError } = await supabase
+    .from('user_attendance')
+    .select('game_id')
+    .eq('user_id', TEMP_USER_ID)
+
+  if (gamesError || !attendedGames || attendedGames.length === 0) {
+    return {
+      battingAverage: [],
+      homeruns: [],
+      rbi: [],
+      stolenBases: [],
+      qualifyingAtBats,
+      attendedGamesCount,
+    }
+  }
+
+  const gameIds = attendedGames.map((g) => g.game_id)
+
+  // 選手成績を取得
+  const { data, error } = await supabase
+    .from('game_player_stats')
+    .select(`
+      player_id,
+      at_bats,
+      hits,
+      homeruns,
+      rbi,
+      stolen_bases,
+      players (
+        id,
+        name,
+        position,
+        number
+      )
+    `)
+    .in('game_id', gameIds)
+
+  if (error) {
+    console.error('Error fetching batting stats:', error)
+    return {
+      battingAverage: [],
+      homeruns: [],
+      rbi: [],
+      stolenBases: [],
+      qualifyingAtBats,
+      attendedGamesCount,
+    }
+  }
+
+  // 選手ごとに集計
+  const playerStatsMap = new Map()
+
+  data?.forEach((stat: any) => {
+    const playerId = stat.player_id
+    if (!playerStatsMap.has(playerId)) {
+      playerStatsMap.set(playerId, {
+        player: stat.players,
+        atBats: 0,
+        hits: 0,
+        homeruns: 0,
+        rbi: 0,
+        stolenBases: 0,
+      })
+    }
+
+    const playerStats = playerStatsMap.get(playerId)
+    playerStats.atBats += stat.at_bats || 0
+    playerStats.hits += stat.hits || 0
+    playerStats.homeruns += stat.homeruns || 0
+    playerStats.rbi += stat.rbi || 0
+    playerStats.stolenBases += stat.stolen_bases || 0
+  })
+
+  const allPlayers = Array.from(playerStatsMap.values())
+
+  // 打率ランキング（規定打席以上、打率順）
+  const battingAverage = allPlayers
+    .filter((p) => p.atBats >= qualifyingAtBats)
+    .map((p) => ({
+      ...p,
+      avg: p.atBats > 0 ? p.hits / p.atBats : 0,
+    }))
+    .sort((a, b) => b.avg - a.avg)
+    .slice(0, 5)
+
+  // 本塁打ランキング（0本除外、本塁打順）
+  const homeruns = allPlayers
+    .filter((p) => p.homeruns > 0)
+    .sort((a, b) => b.homeruns - a.homeruns)
+    .slice(0, 5)
+
+  // 打点ランキング（0打点除外、打点順）
+  const rbi = allPlayers
+    .filter((p) => p.rbi > 0)
+    .sort((a, b) => b.rbi - a.rbi)
+    .slice(0, 5)
+
+  // 盗塁ランキング（0盗塁除外、盗塁順）
+  const stolenBases = allPlayers
+    .filter((p) => p.stolenBases > 0)
+    .sort((a, b) => b.stolenBases - a.stolenBases)
+    .slice(0, 5)
+
+  return {
+    battingAverage,
+    homeruns,
+    rbi,
+    stolenBases,
+    qualifyingAtBats,
+    attendedGamesCount,
+  }
+}
+
+/**
+ * 投手ランキングを取得
+ */
+export async function getPitchingRankings() {
+  // 観戦試合数を取得
+  const attendedGamesCount = await getAttendedGamesCount()
+  const qualifyingInnings = attendedGamesCount * 0.5 // 規定投球回
+
+  // ユーザーが観戦した試合のIDリストを取得
+  const { data: attendedGames, error: gamesError } = await supabase
+    .from('user_attendance')
+    .select('game_id')
+    .eq('user_id', TEMP_USER_ID)
+
+  if (gamesError || !attendedGames || attendedGames.length === 0) {
+    return {
+      earnedRunAverage: [],
+      wins: [],
+      innings: [],
+      strikeouts: [],
+      qualifyingInnings,
+      attendedGamesCount,
+    }
+  }
+
+  const gameIds = attendedGames.map((g) => g.game_id)
+
+  // 投手成績を取得
+  const { data, error } = await supabase
+    .from('game_pitcher_stats')
+    .select(`
+      player_id,
+      result,
+      innings,
+      balls,
+      hits,
+      strikeouts,
+      walks,
+      runs,
+      players (
+        id,
+        name,
+        position,
+        number
+      )
+    `)
+    .in('game_id', gameIds)
+
+  if (error) {
+    console.error('Error fetching pitching stats:', error)
+    return {
+      earnedRunAverage: [],
+      wins: [],
+      innings: [],
+      strikeouts: [],
+      qualifyingInnings,
+      attendedGamesCount,
+    }
+  }
+
+  // 選手ごとに集計
+  const playerStatsMap = new Map()
+
+  data?.forEach((stat: any) => {
+    const playerId = stat.player_id
+    if (!playerStatsMap.has(playerId)) {
+      playerStatsMap.set(playerId, {
+        player: stat.players,
+        wins: 0,
+        innings: 0,
+        strikeouts: 0,
+        runs: 0,
+      })
+    }
+
+    const playerStats = playerStatsMap.get(playerId)
+
+    // 勝利数のカウント（resultが'勝'または'win'の場合）
+    if (stat.result === '勝' || stat.result === 'win') {
+      playerStats.wins += 1
+    }
+
+    playerStats.innings += stat.innings || 0
+    playerStats.strikeouts += stat.strikeouts || 0
+    playerStats.runs += stat.runs || 0
+  })
+
+  const allPitchers = Array.from(playerStatsMap.values())
+
+  // 失点率ランキング（規定投球回以上、失点率順・低い順）
+  const earnedRunAverage = allPitchers
+    .filter((p) => p.innings >= qualifyingInnings)
+    .map((p) => ({
+      ...p,
+      era: p.innings > 0 ? (p.runs * 9) / p.innings : 0,
+    }))
+    .sort((a, b) => a.era - b.era) // 低い順
+    .slice(0, 5)
+
+  // 勝利数ランキング（0勝除外、勝利数順）
+  const wins = allPitchers
+    .filter((p) => p.wins > 0)
+    .sort((a, b) => b.wins - a.wins)
+    .slice(0, 5)
+
+  // 投球回ランキング（投球回順）
+  const innings = allPitchers
+    .filter((p) => p.innings > 0)
+    .sort((a, b) => b.innings - a.innings)
+    .slice(0, 5)
+
+  // 奪三振ランキング（0奪三振除外、奪三振順）
+  const strikeouts = allPitchers
+    .filter((p) => p.strikeouts > 0)
+    .sort((a, b) => b.strikeouts - a.strikeouts)
+    .slice(0, 5)
+
+  return {
+    earnedRunAverage,
+    wins,
+    innings,
+    strikeouts,
+    qualifyingInnings,
+    attendedGamesCount,
+  }
 }

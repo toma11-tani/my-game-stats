@@ -54,3 +54,19 @@ export interface UserAttendance {
   memo: string | null
   created_at: string
 }
+
+/**
+ * スコアボード用の試合詳細データ
+ * game_stats テーブルのスキーマ
+ */
+export interface GameScoreboardData {
+  game_id: string // games.id を参照する外部キー (UUID)
+  home_score: number // ホームチームの合計得点
+  away_score: number // アウェイチームの合計得点
+  home_hits: number // ホームチームの安打数
+  away_hits: number // アウェイチームの安打数
+  home_errors: number // ホームチームのエラー数
+  away_errors: number // アウェイチームのエラー数
+  home_innings: number[] // ホームチームの各回の得点配列
+  away_innings: number[] // アウェイチームの各回の得点配列
+}

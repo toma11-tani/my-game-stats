@@ -2,6 +2,12 @@ import { Suspense } from 'react'
 import { getAllGamesWithAttendance, getHomeTeam } from '@/lib/api'
 import { GameCard } from '@/components/game-card'
 import { Calendar } from 'lucide-react'
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion'
 
 interface GroupedGames {
   [key: string]: any[]
@@ -53,39 +59,46 @@ async function GamesContent() {
             試合データがありません
           </div>
         ) : (
-          <div className="space-y-8">
+          <Accordion type="multiple" className="space-y-3">
             {monthKeys.map((monthKey) => (
-              <div key={monthKey}>
-                {/* Month Header */}
-                <div className="mb-3">
-                  <h2 className="text-lg font-bold text-slate-900">
-                    {monthKey}
-                  </h2>
-                  <div className="h-0.5 bg-slate-200 mt-2" />
-                </div>
-
-                {/* Games in this month */}
-                <div className="space-y-3">
-                  {groupedGames[monthKey].map((game) => (
-                    <GameCard
-                      key={game.id}
-                      game={{
-                        id: game.id,
-                        date: game.date,
-                        homeTeam: homeTeam,
-                        opponentTeam: game.teams,
-                        result_type: game.result_type,
-                        home_score: game.home_score,
-                        away_score: game.away_score,
-                        stadium: game.stadium,
-                        isAttended: game.isAttended,
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
+              <AccordionItem
+                key={monthKey}
+                value={monthKey}
+                className="border rounded-lg bg-white shadow-sm"
+              >
+                <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                  <div className="flex items-center justify-between w-full pr-2">
+                    <span className="text-base font-semibold text-slate-900">
+                      {monthKey}
+                    </span>
+                    <span className="text-sm text-slate-500">
+                      {groupedGames[monthKey].length}試合
+                    </span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-4 pb-4 pt-2">
+                  <div className="space-y-3">
+                    {groupedGames[monthKey].map((game) => (
+                      <GameCard
+                        key={game.id}
+                        game={{
+                          id: game.id,
+                          date: game.date,
+                          homeTeam: homeTeam,
+                          opponentTeam: game.teams,
+                          result_type: game.result_type,
+                          home_score: game.home_score,
+                          away_score: game.away_score,
+                          stadium: game.stadium,
+                          isAttended: game.isAttended,
+                        }}
+                      />
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
             ))}
-          </div>
+          </Accordion>
         )}
       </div>
     </div>

@@ -1,326 +1,222 @@
-# My Game Stats - プロジェクトドキュメント
+# CLAUDE.md
 
-## 📋 プロジェクト概要
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**My Game Stats** は、阪神タイガースファンのための野球観戦記録アプリケーションです。ユーザーが実際に球場で観戦した試合を記録し、選手成績や観戦統計を確認できるモバイル専用Webアプリです。
+## Project Overview
 
-### 主な特徴
-- 📱 スマートフォン専用の最適化されたUI/UX
-- 🎨 Apple風の洗練されたデザイン（shadcn/ui使用）
-- 🎯 阪神タイガースカラー（#F6D32D）を効果的に使用
-- ⚡ 高速なレスポンスとOptimistic UI
-- 🗄️ 完全なデータベース駆動設計
+**My Game Stats** - 阪神タイガースファンのための野球観戦記録アプリ（モバイル専用Webアプリ）
 
-## 🛠 技術スタック
+Mobile-first web app for Hanshin Tigers fans to track game attendance, view player stats from attended games, and record game memos.
 
-### フロントエンド
-- **Next.js 15+** - App Router使用
-- **TypeScript** - 型安全性の確保
-- **Tailwind CSS** - ユーティリティファーストのスタイリング
-- **shadcn/ui** - 高品質なUIコンポーネント
-- **React Hooks** - `useOptimistic`, `useTransition`を活用
+## Tech Stack
 
-### バックエンド
-- **Supabase** - PostgreSQLデータベース＋リアルタイムAPI
-- **Next.js Server Actions** - サーバーサイドのデータ変更処理
+- **Next.js 16.1.1** (App Router, Turbopack)
+- **TypeScript**
+- **Tailwind CSS 4** + **shadcn/ui**
+- **Supabase** (PostgreSQL database + API)
+- **React 19** with `useOptimistic`, `useTransition`
 
-### フォント
-- **Inter** - 欧文フォント
-- **Noto Sans JP** - 日本語フォント
+## Common Commands
 
-## 📂 プロジェクト構造
+```bash
+# Development
+npm run dev          # Start dev server at http://localhost:3000
 
-```
-MyGameStats/
-├── app/                          # Next.js App Router
-│   ├── layout.tsx               # ルートレイアウト（フォント設定、ナビゲーション）
-│   ├── page.tsx                 # ホーム画面（ダッシュボード）
-│   ├── games/                   # 試合関連ページ
-│   │   ├── page.tsx            # 試合一覧
-│   │   └── [id]/               # 動的ルート
-│   │       └── page.tsx        # 試合詳細（スコアボード、成績、メモ）
-│   ├── stats/                   # 統計ページ
-│   │   └── page.tsx            # 選手成績（観戦時のみ）
-│   ├── profile/                 # プロフィールページ
-│   │   └── page.tsx            # 観戦履歴、球場別統計
-│   └── actions.ts               # Server Actions（チェックイン、メモ更新）
-│
-├── components/                   # 再利用可能なコンポーネント
-│   ├── ui/                      # shadcn/uiコンポーネント
-│   ├── bottom-nav.tsx           # ボトムナビゲーション
-│   ├── game-card.tsx            # 試合カード（Optimistic UI）
-│   ├── memo-editor.tsx          # メモ編集機能
-│   └── player-stat-card.tsx     # 選手成績カード
-│
-├── lib/                         # ユーティリティ・API
-│   ├── api.ts                   # Supabaseデータ取得関数
-│   ├── supabase.ts              # Supabaseクライアント初期化
-│   ├── types.ts                 # TypeScript型定義
-│   └── utils.ts                 # ユーティリティ関数
-│
-├── public/                      # 静的ファイル
-├── .env.local                   # 環境変数（Supabase認証情報）
-├── schema.sql                   # データベーススキーマ
-└── seed.sql                     # サンプルデータ
+# Production build
+npm run build        # Build for production
+npm start            # Start production server
+
+# Linting
+npm run lint         # Run ESLint
 ```
 
-## 🗄️ データベース構造
+## Database Setup
 
-### テーブル一覧
+When setting up the database or adding new data:
 
-#### 1. `teams` - チーム情報
-```sql
-- id: UUID (主キー)
-- name: TEXT (チーム名: "阪神", "巨人" など)
-- abbreviation: TEXT (1文字略称: "神", "巨" など)
-- color_primary: TEXT (HEXカラーコード)
-- color_secondary: TEXT (サブカラー、nullable)
-- created_at: TIMESTAMP
-```
+1. Run `schema.sql` in Supabase SQL Editor (creates tables)
+2. Run `seed.sql` to populate sample data
 
-#### 2. `players` - 選手情報
-```sql
-- id: UUID (主キー)
-- team_id: UUID (外部キー → teams)
-- name: TEXT (選手名)
-- position: TEXT (ポジション)
-- number: INTEGER (背番号)
-- created_at: TIMESTAMP
-```
+Environment variables required in `.env.local`:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
-#### 3. `games` - 試合情報
-```sql
-- id: UUID (主キー)
-- date: DATE (試合日)
-- opponent_team_id: UUID (外部キー → teams)
-- stadium: TEXT (球場名)
-- home_score: INTEGER (阪神の得点)
-- away_score: INTEGER (相手チームの得点)
-- result_type: TEXT ('win', 'loss', 'draw')
-- created_at: TIMESTAMP
-```
+## Architecture
 
-#### 4. `game_player_stats` - 打者成績
-```sql
-- id: UUID (主キー)
-- game_id: UUID (外部キー → games)
-- player_id: UUID (外部キー → players)
-- at_bats: INTEGER (打数)
-- hits: INTEGER (安打)
-- homeruns: INTEGER (本塁打)
-- rbi: INTEGER (打点)
-- runs: INTEGER (得点)
-- stolen_bases: INTEGER (盗塁)
-- created_at: TIMESTAMP
-```
+### App Structure (Next.js App Router)
 
-#### 5. `game_pitcher_stats` - 投手成績
-```sql
-- id: UUID (主キー)
-- game_id: UUID (外部キー → games)
-- player_id: UUID (外部キー → players)
-- result: TEXT (勝敗: '勝', '負', 'S' など)
-- innings: DECIMAL (投球回)
-- balls: INTEGER (投球数)
-- hits: INTEGER (被安打)
-- strikeouts: INTEGER (奪三振)
-- walks: INTEGER (与四球)
-- runs: INTEGER (失点)
-- created_at: TIMESTAMP
-```
+- **`app/layout.tsx`** - Root layout with fonts (Inter, Noto Sans JP) and bottom navigation
+- **`app/page.tsx`** - Dashboard showing attendance stats and recent games
+- **`app/actions.ts`** - Server Actions for check-in/out and memo updates
+- **Routes:**
+  - `/games` - Game list with check-in buttons (Optimistic UI)
+  - `/games/[id]` - Game detail with scoreboard, batter/pitcher stats tabs, memo editor
+  - `/stats` - Player stats aggregated from attended games only
+  - `/profile` - User attendance history and stadium statistics
 
-#### 6. `user_attendance` - ユーザー観戦記録
-```sql
-- id: UUID (主キー)
-- user_id: UUID (ユーザーID、現在は固定値)
-- game_id: UUID (外部キー → games)
-- memo: TEXT (観戦メモ)
-- created_at: TIMESTAMP
-```
+### Data Layer
 
-### データベース設計の特徴
+- **`lib/api.ts`** - All Supabase data fetching functions (see API reference below)
+- **`lib/supabase.ts`** - Supabase client initialization
+- **`lib/types.ts`** - TypeScript type definitions for DB schema
+- **Server Components** - Default for data fetching, minimize client JS
+- **Server Actions** - Used for mutations (check-in, memo updates)
 
-1. **完全正規化**: データの重複を排除
-2. **チーム情報のDB管理**: 略称・カラーもすべてDBから取得
-3. **外部キー制約**: データ整合性の保証
-4. **UUID使用**: グローバルに一意な識別子
+## Database Schema
 
-## 🎯 主要機能
+### Core Tables
 
-### 1. ホーム画面（ダッシュボード）
-- 観戦成績サマリー（勝率、試合数、勝敗内訳）
-- 最近の試合一覧（最新3試合）
-- タイガースイエローを使ったアクセント
+**`teams`** - Team information (Hanshin, opponents)
+- Includes `abbreviation` (1-char for scoreboard), `color_primary`, `color_secondary`
 
-### 2. 試合一覧ページ
-- 月別グループ表示
-- チェックイン/チェックアウト機能（Optimistic UI）
-- 試合結果による色分け（勝利=黄色、敗北=グレー）
-- 試合詳細へのリンク
+**`players`** - Player roster
+- Links to `teams` via `team_id`
 
-### 3. 試合詳細ページ
-- **スコアボード**: イニングごとの得点表（1文字略称使用）
-- **打者成績タブ**: 打数、安打、打点、本塁打、盗塁
-- **投手成績タブ**: 勝敗、投球回、球数、被安打、奪三振、与四球、失点
-- **メモ機能**: 試合の感想を記録・編集
+**`games`** - Game records
+- `opponent_team_id` → `teams`, `result_type` ('win', 'loss', 'draw')
+- `home_score`, `away_score`
 
-### 4. Stats（統計）ページ
-- 観戦した試合での選手成績集計
-- 打率順ソート
-- ランキング表示（1位=金トロフィー、2位=銀、3位=銅）
+**`game_stats`** - Scoreboard detail data (NEW)
+- `game_id` (UUID): Foreign key referencing `games.id`
+- `home_score`, `away_score`: Total scores
+- `home_innings`, `away_innings`: Array of scores per inning (Int[])
+- `home_hits`, `away_hits`, `home_errors`, `away_errors`: Game statistics
 
-### 5. プロフィールページ
-- 観戦成績サマリー
-- 球場別統計
-- 観戦履歴（メモ付き）
+**`game_player_stats`** - Batter stats per game
+- `at_bats`, `hits`, `homeruns`, `rbi`, `runs`, `stolen_bases`
+- **Note**: No sorting applied - displayed in DB insertion order
 
-## 🎨 デザインシステム
+**`game_pitcher_stats`** - Pitcher stats per game
+- `result`: Supports 'win', 'loss', 'lose', 'save', 'hold', 'S', 'H', '勝', '負' (all converted to Japanese display)
+- `innings`, `balls`, `hits`, `strikeouts`, `walks`, `runs`
 
-### カラーパレット
-- **背景**: `bg-slate-50` (純白を避けた柔らかい背景)
-- **テキスト**: `text-slate-900` (#1e293b, 純黒を避けた読みやすいテキスト)
-- **アクセント**: `#F6D32D` (タイガースイエロー、重要なアクション専用)
-- **ダークモード**: スコアボード・ヘッダーで `bg-slate-900` 使用
+**`user_attendance`** - User's game attendance
+- `user_id` (currently hardcoded as `00000000-0000-0000-0000-000000000000`)
+- `game_id`, `memo`
 
-### デザイン原則
-1. **Apple風の洗練さ**: 適切な余白、シャドウ、角丸
-2. **安っぽくない**: shadcn/uiの高品質コンポーネント使用
-3. **色の節度**: タイガースイエローは必要最小限
-4. **モバイルファースト**: `max-w-lg` で幅を制限
+### Key Design Principles
 
-## 🔄 主要なAPI関数
+1. **Fully database-driven** - All team info (names, abbreviations, colors) comes from DB, zero hardcoding
+2. **Normalized schema** - Foreign keys enforce data integrity
+3. **UUIDs** for all primary keys
+4. **1:1 relationship** - `games` and `game_stats` linked by same UUID
 
-### データ取得（`lib/api.ts`）
+## Design System
+
+### Colors
+- **Background**: `bg-slate-50` (soft, not pure white)
+- **Text**: `text-slate-900` (#1e293b, not pure black for readability)
+- **Accent**: `#F6D32D` (Hanshin Tigers yellow - use sparingly, only for key actions)
+- **Game detail page**: White-based design (`bg-white` cards, `bg-slate-50` background)
+- **Headers**: `bg-slate-900` gradient with white text
+
+### Design Principles
+- **Apple-inspired refinement**: Proper spacing, shadows, rounded corners
+- **Mobile-first**: `max-w-lg` container width throughout
+- **High-quality components**: shadcn/ui, avoid cheap-looking UI
+- **Restrained color usage**: Tigers yellow only where it matters
+- **Accordion UI**: Used for collapsible sections (games by month, stats rankings)
+
+## Key Features & Implementation Notes
+
+### Games List Page (Monthly Accordion)
+- **shadcn/ui Accordion** with `type="multiple"` for expanding multiple months
+- Games grouped by "YYYY年MM月" format
+- Each accordion header shows month and game count
+- **Default state**: All months collapsed
+- Check-in/out with Optimistic UI
+
+### Game Detail Page (White Theme)
+- **Scoreboard**: Displays inning-by-inning scores from `game_stats` table
+  - Uses `home_innings` / `away_innings` arrays
+  - Falls back to '-' if no `game_stats` record exists
+  - Shows total scores, hits, and errors
+- **Batter Stats Tab**: Displays in DB insertion order (no sorting)
+- **Pitcher Stats Tab**:
+  - Result labels: 'win'/'勝' → 勝, 'loss'/'lose'/'負' → 負, 'save'/'S' → S, 'hold'/'H' → H
+  - Color-coded badges (yellow=win, red=loss, blue=save, green=hold)
+  - Empty column header for result field
+- **Memo Editor**: White card design with inline save
+
+### Stats Rankings Page
+- **Batting Rankings** (Top 5 each, accordion format):
+  - 打率 (Batting Average) - Requires 観戦試合数 × 1 at-bats
+  - 本塁打 (Home Runs) - Excludes 0
+  - 打点 (RBI) - Excludes 0
+  - 盗塁 (Stolen Bases) - Excludes 0
+- **Pitching Rankings** (Top 5 each, accordion format):
+  - 失点率 (Runs Average) - Requires 観戦試合数 × 0.5 innings, calculated as (runs × 9) / innings
+  - 勝利数 (Wins) - Counts 'win' or '勝' results, excludes 0
+  - 投球回 (Innings) - Excludes 0
+  - 奪三振 (Strikeouts) - Excludes 0
+- **Default state**: All accordions collapsed
+- **Trophy icons**: Gold (1st), Silver (2nd), Bronze (3rd)
+- **Japanese only**: No English abbreviations (AVG, HR, etc.)
+
+### Optimistic UI (Check-in/out)
+- Uses React `useOptimistic` hook in `components/game-card.tsx`
+- Updates UI instantly before server confirmation
+- Server Actions in `app/actions.ts` handle actual DB updates
+
+## API Reference
+
+### Data Fetching (`lib/api.ts`)
+
+All functions use Supabase client and return data or throw errors.
 
 ```typescript
-// 試合一覧（観戦済みフラグ付き）
-getAllGamesWithAttendance()
+// Game data
+getAllGamesWithAttendance()              // Games with isAttended flag
+getGameDetail(gameId: string)            // Single game with team info
+getGameScoreboardData(gameId: string)    // Scoreboard data from game_stats (NEW)
 
-// 試合詳細
-getGameDetail(gameId: string)
-getGameBatterStats(gameId: string)
-getGamePitcherStats(gameId: string)
+// Player stats
+getGameBatterStats(gameId: string)       // Batter stats for game (no sorting)
+getGamePitcherStats(gameId: string)      // Pitcher stats for game
+getPlayerStatsForAttendedGames()         // Aggregated stats from attended games
 
-// ホームチーム情報
-getHomeTeam()
+// Rankings (NEW)
+getBattingRankings()                     // Top 5 rankings for batting categories
+getPitchingRankings()                    // Top 5 rankings for pitching categories
+getAttendedGamesCount()                  // Count of attended games
 
-// 統計
-getAttendanceStats()
-getPlayerStatsForAttendedGames()
-getStadiumStats()
-
-// メモ
-getUserMemo(gameId: string)
+// User & team data
+getHomeTeam()                            // Hanshin team info
+getAttendanceStats()                     // User's win/loss/draw counts
+getStadiumStats()                        // Attendance grouped by stadium
+getUserMemo(gameId: string)              // User's memo for game
 ```
 
-### データ変更（`app/actions.ts`）
+### Server Actions (`app/actions.ts`)
 
 ```typescript
-// チェックイン/チェックアウト
-checkInGame(gameId: string)
-checkOutGame(gameId: string)
-
-// メモ更新
-updateMemo(gameId: string, memo: string)
+checkInGame(gameId: string)           // Mark game as attended
+checkOutGame(gameId: string)          // Remove attendance
+updateMemo(gameId: string, memo: string)  // Save game memo
 ```
 
-## 🚀 セットアップ手順
+## Important Constraints & Context
 
-### 1. リポジトリのクローン
+### Current Authentication
+- **User ID is hardcoded** as `00000000-0000-0000-0000-000000000000`
+- No Supabase Auth or RLS implemented
+- All users share the same data
+
+### Known Limitations
+- No image upload for memos
+- Japanese language content throughout the app
+- Scoreboard requires manual data entry in `game_stats` table
+
+### Component Architecture
+- **Client Components** marked with `"use client"`:
+  - `bottom-nav.tsx` - Navigation with active state
+  - `game-card.tsx` - Optimistic UI for check-in/out
+  - `memo-editor.tsx` - Editable textarea
+- **Server Components** - Everything else (default)
+
+### shadcn/ui Components
+When adding new UI components, use:
 ```bash
-git clone https://github.com/toma11-tani/my-game-stats.git
-cd MyGameStats
+npx shadcn@latest add <component-name>
 ```
-
-### 2. 依存関係のインストール
-```bash
-npm install
-```
-
-### 3. Supabaseプロジェクトの作成
-1. [Supabase](https://supabase.com)でプロジェクト作成
-2. SQL Editorで `schema.sql` を実行
-3. SQL Editorで `seed.sql` を実行（サンプルデータ）
-
-### 4. 環境変数の設定
-`.env.local` ファイルを作成:
-```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-```
-
-### 5. 開発サーバーの起動
-```bash
-npm run dev
-```
-
-`http://localhost:3000` でアプリケーションにアクセス
-
-## 📝 設計思想
-
-### 1. データベース駆動設計
-チーム名、略称、カラーなど、すべてのチーム情報をデータベースで管理。フロントエンドにハードコードされた値は一切なし。これにより、DBの更新だけでアプリ全体に反映される柔軟性を実現。
-
-### 2. Optimistic UI
-チェックイン/チェックアウト機能で `useOptimistic` を使用。サーバーの応答を待たずに即座にUIを更新し、スムーズなユーザー体験を提供。
-
-### 3. Server Components優先
-可能な限りServer Componentsを使用してデータ取得を行い、クライアントサイドのJavaScriptを最小化。
-
-### 4. 型安全性
-TypeScriptで厳密な型定義を行い、開発時のエラーを防止。
-
-### 5. モバイルファースト
-スマートフォンでの使用を前提とした設計。`max-w-lg`で幅を制限し、タッチ操作に最適化。
-
-## 🔐 セキュリティ
-
-### 現在の実装
-- ユーザーIDは仮の固定値（`00000000-0000-0000-0000-000000000000`）
-- Supabase RLS（Row Level Security）は未実装
-
-### 今後の改善予定
-- Supabase Authによる認証機能の実装
-- RLSポリシーの設定（ユーザーごとのデータアクセス制御）
-
-## 🐛 既知の制限事項
-
-1. **イニングスコア未実装**: スコアボードは合計得点のみ表示
-2. **認証機能なし**: 全ユーザーが同じデータを共有
-3. **画像アップロード未対応**: メモはテキストのみ
-
-## 📈 今後の拡張予定
-
-- [ ] ユーザー認証機能（Supabase Auth）
-- [ ] イニングごとの得点入力機能
-- [ ] 写真アップロード機能
-- [ ] 座席位置記録機能
-- [ ] 一緒に観戦した人の記録
-- [ ] SNSシェア機能
-- [ ] データエクスポート機能（CSV, JSON）
-- [ ] PWA対応（オフライン機能）
-
-## 🤝 開発履歴
-
-このプロジェクトは Claude Code（Claude Sonnet 4.5）との共同開発により作成されました。
-
-### 主要なマイルストーン
-
-1. **初期セットアップ** - Next.js + Supabase + shadcn/ui
-2. **ダッシュボード実装** - 観戦成績サマリー、最近の試合
-3. **試合一覧ページ** - チェックイン機能、Optimistic UI
-4. **プロフィールページ** - 観戦履歴、球場別統計
-5. **Stats機能** - 選手成績集計、ランキング表示
-6. **試合詳細ページ** - スコアボード、打者/投手成績、メモ機能
-7. **DB駆動化** - チーム情報の完全DB管理、ハードコード削除
-8. **モバイル最適化** - 試合詳細画面のスマホ専用レイアウト
-
-## 📄 ライセンス
-
-このプロジェクトは個人利用を目的としています。
-
----
-
-**開発者**: toma11-tani
-**リポジトリ**: https://github.com/toma11-tani/my-game-stats
-**最終更新**: 2026年1月10日
+Components are installed to `components/ui/`
